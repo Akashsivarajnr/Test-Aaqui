@@ -5,8 +5,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ------------------------------------------------------
@@ -36,6 +37,8 @@ model User {
   sessions     Session[]
   auditLogs    AuditLog[]
   createdAssignments Assignment[] @relation("CreatedAssignments")
+  questionBanks  QuestionBank[] @relation("QuestionBankAuthor")
+  questions      Question[]     @relation("QuestionAuthor")
 
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
@@ -160,6 +163,9 @@ model Assignment {
   // New field for resubmission policy
   allowResubmission  Boolean              @default(false)
 
+  // Assessment Access Code for interns
+  accessCode         String?              @unique
+
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
 
@@ -227,5 +233,55 @@ model SubmissionVersion {
   currentOf    Submission? @relation("CurrentVersion")
 
   @@unique([submissionId, version])
+}
+
+// ─── Question Bank Models ───────────────────────────────────────────────────
+
+model QuestionBank {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  description String?
+  authorId    String
+  author      User       @relation("QuestionBankAuthor", fields: [authorId], references: [id])
+  questions   Question[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("question_banks")
+}
+
+model Question {
+  id             String       @id @default(uuid())
+  title          String
+  difficulty     String       @default("EASY") // EASY | MEDIUM | HARD
+  statement      String       // Full markdown problem description
+  questionBankId String
+  questionBank   QuestionBank @relation(fields: [questionBankId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User         @relation("QuestionAuthor", fields: [authorId], references: [id])
+  testCases      TestCase[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([questionBankId])
+  @@index([difficulty])
+  @@map("questions")
+}
+
+model TestCase {
+  id             String   @id @default(uuid())
+  questionId     String
+  question       Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  orderIndex     Int      // Ordering within the question
+  stdin          String   @default("")
+  expectedOutput String
+  /// When true, this test case is NEVER sent to the frontend.
+  /// It is evaluated server-side only.
+  isHidden       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@unique([questionId, orderIndex])
+  @@index([questionId])
+  @@map("test_cases")
 }
 

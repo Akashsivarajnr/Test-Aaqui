@@ -8,3 +8,12 @@ pydantic-settings
 python-dotenv
 python-jose
 passlib[bcrypt]
+
+# Docker sandbox execution
+docker>=7.0.0
+redis>=5.0.0
+
+# Testing
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+httpx>=0.27.0
