@@ -1,92 +1,108 @@
-# docker-compose.yml
-# Starts all services required for the Docker sandbox execution system.
-# Does NOT require Docker Desktop GUI — Docker Engine is sufficient.
-#
-# Services:
-#   redis           — job queue + result store
-#   sandbox-worker  — consumes jobs from Redis, runs Docker sibling containers
-#   backend         — FastAPI app (optional; can also be run locally with uvicorn)
-#
-# Usage:
-#   docker compose up -d redis sandbox-worker
-#   # Then run the FastAPI backend locally:
-#   cd python_backend && uvicorn main:app --reload --port 3001
-
-version: "3.9"
-
-services:
-  # ── Redis ───────────────────────────────────────────────────────────────────
-  redis:
-    image: redis:7-alpine
-    container_name: ai-interviewer-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  # ── Sandbox Worker ───────────────────────────────────────────────────────────
-  # The worker mounts the host Docker socket so it can spawn sibling containers.
-  # It never runs arbitrary user commands — all images and commands come from
-  # the server-side language registry.
-  sandbox-worker:
-    build:
-      context: .
-      dockerfile: Dockerfile.sandbox-worker
-    container_name: ai-interviewer-sandbox-worker
-    restart: unless-stopped
-    depends_on:
-      redis:
-        condition: service_healthy
-    environment:
-      REDIS_URL: redis://redis:6379/0
-      SANDBOX_QUEUE_NAME: sandbox:jobs
-      SANDBOX_RESULT_TTL: "300"
-      SANDBOX_TIMEOUT_SECONDS: "10"
-      SANDBOX_MEMORY_LIMIT: "256m"
-      SANDBOX_CPU_QUOTA: "100000"
-      SANDBOX_CPU_PERIOD: "100000"
-      IMAGE_PYTHON: "python:3.12-slim"
-      IMAGE_JAVASCRIPT: "node:20-slim"
-      IMAGE_CPP: "gcc:13"
-      IMAGE_JAVA: "eclipse-temurin:17-jdk-alpine"
-    volumes:
-      # Mount host Docker socket so worker can spawn sibling containers
-      - /var/run/docker.sock:/var/run/docker.sock
-    # No network access for the worker itself; sandbox containers get none either
-    networks:
-      - internal
-
-  # ── FastAPI Backend (optional — can run locally instead) ────────────────────
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-    container_name: ai-interviewer-backend
-    restart: unless-stopped
-    depends_on:
-      redis:
-        condition: service_healthy
-    environment:
-      PORT: "3001"
-      REDIS_URL: redis://redis:6379/0
-      SANDBOX_QUEUE_NAME: sandbox:jobs
-    ports:
-      - "3001:3001"
-    networks:
-      - internal
-    profiles:
-      - full  # only starts with: docker compose --profile full up
+version: "3.8"
 
 networks:
-  internal:
+  thozhil-network:
     driver: bridge
 
-volumes:
-  redis_data:
+services:
+  resume-service:
+    build:
+      context: ./services/resume-service
+      dockerfile: Dockerfile
+    container_name: thozhil-resume-service
+    ports:
+      - "8001:8001"
+    environment:
+      - TARGET_SERVICE_URL=http://host.docker.internal:5020
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    networks:
+      - thozhil-network
+
+  project-service:
+    build:
+      context: ./services/project-service
+      dockerfile: Dockerfile
+    container_name: thozhil-project-service
+    ports:
+      - "8002:8002"
+    environment:
+      - TARGET_SERVICE_URL=http://host.docker.internal:5030
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    networks:
+      - thozhil-network
+
+  coding-service:
+    build:
+      context: ./services/coding-service
+      dockerfile: Dockerfile
+    container_name: thozhil-coding-service
+    ports:
+      - "8003:8003"
+    environment:
+      - TARGET_SERVICE_URL=http://host.docker.internal:5040
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    networks:
+      - thozhil-network
+
+  video-service:
+    build:
+      context: ./services/video-service
+      dockerfile: Dockerfile
+    container_name: thozhil-video-service
+    ports:
+      - "8004:8004"
+    environment:
+      - TARGET_SERVICE_URL=http://host.docker.internal:5010
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    networks:
+      - thozhil-network
+
+  orchestrator:
+    build:
+      context: ./orchestrator
+      dockerfile: Dockerfile
+    container_name: thozhil-orchestrator
+    ports:
+      - "8000:8000"
+    environment:
+      - RESUME_SERVICE_URL=http://resume-service:8001
+      - PROJECT_SERVICE_URL=http://project-service:8002
+      - CODING_SERVICE_URL=http://coding-service:8003
+      - VIDEO_SERVICE_URL=http://video-service:8004
+      - RESUME_MIN_SCORE=60.0
+      - PROJECT_MIN_SCORE=60.0
+      - CODING_MIN_SCORE=60.0
+      - VIDEO_MIN_SCORE=60.0
+      - ORCHESTRATOR_PORT=8000
+    depends_on:
+      resume-service:
+        condition: service_healthy
+      project-service:
+        condition: service_healthy
+      coding-service:
+        condition: service_healthy
+      video-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    networks:
+      - thozhil-network

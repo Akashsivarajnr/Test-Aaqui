@@ -8,23 +8,20 @@ const router = useRouter();
 const route = useRoute();
 const { mobile } = useDisplay();
 
-// On mobile the drawer starts closed and overlays content (temporary);
-// on desktop/tablet it stays open and pushed alongside content (permanent).
 const drawerOpen = ref(!mobile.value);
 
 watch(mobile, (isMobile) => {
   drawerOpen.value = !isMobile;
 });
 
-const navItems = [
-  { to: '/', title: 'Exams', icon: 'mdi-file-document-edit-outline' },
-  { to: '/questions', title: 'Question bank', icon: 'mdi-bank-outline' },
-  { to: '/questions/import', title: 'Bulk import', icon: 'mdi-tray-arrow-up' },
+const moduleNav = [
+  { to: '/resume', title: 'AI Resume Screener', icon: 'mdi-file-document-search-outline' },
+  { to: '/interview', title: 'AI Video Interviewer', icon: 'mdi-video-account' },
+  { to: '/project-analysis', title: 'AI Project Analyser', icon: 'mdi-chart-timeline-variant' },
+  { to: '/coding', title: 'AI Coding Interviewer', icon: 'mdi-code-braces' },
 ];
 
 function onNavSelect() {
-  // Auto-close the drawer after navigating on mobile so it doesn't stay
-  // open over the page content.
   if (mobile.value) drawerOpen.value = false;
 }
 
@@ -38,7 +35,7 @@ function logout() {
   <v-app-bar v-if="mobile" density="comfortable" flat>
     <v-app-bar-nav-icon @click="drawerOpen = !drawerOpen" />
     <v-app-bar-title class="text-h6 font-weight-bold">
-      Assessment<span class="text-primary">Admin</span>
+      THOZHIL<span class="text-primary"> Admin</span>
     </v-app-bar-title>
   </v-app-bar>
 
@@ -46,17 +43,29 @@ function logout() {
     v-model="drawerOpen"
     :permanent="!mobile"
     :temporary="mobile"
-    width="240"
+    width="260"
   >
-    <div v-if="!mobile" class="pa-4">
+    <div v-if="!mobile" class="pa-4 pb-2">
       <div class="text-h6 font-weight-bold">
-        Assessment<span class="text-primary">Admin</span>
+        THOZHIL<span class="text-primary"> Admin</span>
       </div>
     </div>
 
     <v-list nav density="comfortable">
       <v-list-item
-        v-for="item in navItems"
+        to="/"
+        prepend-icon="mdi-view-dashboard-outline"
+        title="Dashboard"
+        :active="route.path === '/'"
+        rounded="lg"
+        @click="onNavSelect"
+      />
+
+      <v-divider class="my-2" />
+
+      <v-list-subheader class="font-weight-bold text-caption text-uppercase">Modules</v-list-subheader>
+      <v-list-item
+        v-for="item in moduleNav"
         :key="item.to"
         :to="item.to"
         :prepend-icon="item.icon"
@@ -65,12 +74,23 @@ function logout() {
         rounded="lg"
         @click="onNavSelect"
       />
+
+      <v-divider class="my-2" />
+
+      <v-list-item
+        to="/interns"
+        prepend-icon="mdi-account-group-outline"
+        title="Intern Details"
+        :active="route.path.startsWith('/interns')"
+        rounded="lg"
+        @click="onNavSelect"
+      />
     </v-list>
 
     <template #append>
-      <div class="pa-3">
+      <div class="pa-3 border-t">
         <div class="text-caption text-medium-emphasis mb-2" style="word-break: break-word">
-          {{ authState.user?.name || authState.user?.email }}
+          {{ authState.user?.name || authState.user?.email || 'Admin User' }}
         </div>
         <v-btn block variant="outlined" size="small" color="error" prepend-icon="mdi-logout" @click="logout">
           Log out
@@ -80,7 +100,7 @@ function logout() {
   </v-navigation-drawer>
 
   <v-main>
-    <v-container fluid class="pa-4 pa-sm-6 pa-md-8" style="max-width: 1200px">
+    <v-container fluid class="pa-4 pa-sm-6 pa-md-8" style="max-width: 1280px">
       <slot />
     </v-container>
   </v-main>

@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "nx serve",
+    "build": "nx build",
+    "preview": "nx preview"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",

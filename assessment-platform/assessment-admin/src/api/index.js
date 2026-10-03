@@ -91,6 +91,37 @@ async function downloadBlob(path, filename, params) {
   window.URL.revokeObjectURL(url);
 }
 
+export const resumeApi = {
+  upload: (formData) => api.post('/resumes/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data),
+  screen: (data) => api.post('/resumes/screen', data).then((r) => r.data),
+  listAll: () => api.get('/resumes/evaluations').then((r) => r.data),
+  getByAssignment: (assignmentId) => api.get(`/resumes/assignment/${assignmentId}`).then((r) => r.data),
+  getById: (id) => api.get(`/resumes/evaluation/${id}`).then((r) => r.data),
+  remove: (id) => api.delete(`/resumes/evaluation/${id}`).then((r) => r.data),
+};
+
+export const interviewApi = {
+  getByAssignment: (assignmentId) => api.get(`/interviews/assignment/${assignmentId}`).then((r) => r.data),
+  getById: (id) => api.get(`/interviews/evaluation/${id}`).then((r) => r.data),
+  evaluate: (data) => api.post('/interviews/evaluate', data).then((r) => r.data),
+};
+
+export const projectLogApi = {
+  submit: (data) => api.post('/project-logs/submit', data).then((r) => r.data),
+  getByAssignment: (assignmentId) => api.get(`/project-logs/assignment/${assignmentId}`).then((r) => r.data),
+  updateNotes: (id, internalNotes) => api.post(`/project-logs/review/${id}/notes`, { internalNotes }).then((r) => r.data),
+};
+
+export const adminApi = {
+  getDashboardStats: () => api.get('/admin/dashboard').then((r) => r.data),
+  listAssignments: (params) => api.get('/admin/assignments', { params }).then((r) => r.data),
+  listInterns: () => api.get('/admin/interns').then((r) => r.data),
+  getInternHistory: (id) => api.get(`/admin/interns/${id}/assessment-history`).then((r) => r.data),
+  getUnifiedReport: (id) => api.get(`/admin/assignments/${id}/report`).then((r) => r.data),
+  updateDecision: (id, { decision, privateNotes }) =>
+    api.post(`/admin/assignments/${id}/decision`, { decision, privateNotes }).then((r) => r.data),
+};
+
 export const recordingsApi = {
   listForCandidate: (examId, candidateId) =>
     api.get(`/exams/${examId}/candidates/${candidateId}/recordings`).then((r) => r.data),

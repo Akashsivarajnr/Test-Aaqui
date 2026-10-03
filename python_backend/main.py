@@ -15,8 +15,7 @@ from fastapi import FastAPI
 # Add root directory to sys.path so modules like static_analysis, ai_review, and authority_review can be imported
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from app.config import settings
-from app.routers import auth, users, roles, authorities, interns, assignments, dashboard, audit, submissions
+from app.routers import auth, users, roles, authorities, interns, assignments, dashboard, audit, submissions, resume_screener, interview_screener, project_screener
 from app.editor import router as editor_router
 from app.execution import router as execution_router
 from app.sandbox import router as sandbox_router
@@ -51,6 +50,9 @@ app.include_router(assignments.router, prefix="/assignments", tags=["assignments
 app.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 app.include_router(audit.router, prefix="/audit-logs", tags=["audit"])
 app.include_router(submissions.router, prefix="/submissions", tags=["submissions"])
+app.include_router(resume_screener.router, prefix="/api/v1/resume", tags=["resume"])
+app.include_router(interview_screener.router, prefix="/api/v1/interview", tags=["interview"])
+app.include_router(project_screener.router, prefix="/api/v1/project", tags=["project"])
 app.include_router(editor_router, prefix="/api/v1/editor", tags=["editor"])
 app.include_router(execution_router, prefix="/api/v1/execution", tags=["execution"])
 app.include_router(sandbox_router, prefix="/api/v1/sandbox", tags=["sandbox"])
@@ -72,4 +74,5 @@ async def health_check():
     return {"status": "ok"}
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=int(settings.PORT), reload=True)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

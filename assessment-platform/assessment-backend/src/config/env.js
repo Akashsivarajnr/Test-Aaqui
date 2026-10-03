@@ -18,7 +18,9 @@ module.exports = {
   port: parseInt(process.env.PORT || '5000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
 
-  mongoUri: required('MONGO_URI'),
+  mongoUri: process.env.MONGO_URI || '',
+  databaseUrl: process.env.DATABASE_URL || 'file:./dev.db',
+  directUrl: process.env.DIRECT_URL || '',
 
   jwtSecret: required('JWT_SECRET'),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',

@@ -50,6 +50,22 @@ app.use('/api/question-banks', questionBankRoutes);
 const internAuthRoutes = require('./routes/internAuthRoutes');
 app.use('/api/intern', internAuthRoutes);
 
+// Resume screener routes — upload, screen, view candidate evaluations
+const resumeRoutes = require('./routes/resumeRoutes');
+app.use('/api/resumes', resumeRoutes);
+
+// Video & Voice Interview routes — session init, turn-taking transcript evaluation, playback
+const interviewRoutes = require('./routes/interviewRoutes');
+app.use('/api/interviews', interviewRoutes);
+
+// Project Analysis LogLense routes — work log submissions, multi-LLM review cards, risk notes
+const projectLogRoutes = require('./routes/projectLogRoutes');
+app.use('/api/project-logs', projectLogRoutes);
+
+// Unified Admin Dashboard and Multi-Stage Reports routes
+const adminRoutes = require('./routes/adminRoutes');
+app.use('/api/admin', adminRoutes);
+
 app.use((req, res) => res.status(404).json({ message: 'Route not found.' }));
 app.use(errorHandler);
 

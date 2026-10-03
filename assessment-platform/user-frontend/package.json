@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "nx serve",
+    "build": "tsc -b && nx build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "nx preview"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
